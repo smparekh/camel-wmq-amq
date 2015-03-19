@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/blueprint"
+	xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0"
+	xsi:schemaLocation="
+       http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+       http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd
+       http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.1.0 http://aries.apache.org/schemas/blueprint-cm/blueprint-cm-1.1.0.xsd">
+	
+	<!-- Property Placeholder -->
+	<cm:property-placeholder persistent-id="wmq.to.amq"
+		update-strategy="reload" />	
+	
+	<!-- Configure Active MQ connection factory -->
+	<bean id="amqConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="${amq.broker.url}" />
+		<property name="userName" value="${amq.username}" />
+		<property name="password" value="${amq.password}" />
+	</bean>
+
+	<bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+		<property name="connectionFactory" ref="amqConnectionFactory" />
+		<property name="concurrentConsumers" value="10" />
+	</bean>
+
+	<bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="configuration" ref="jmsConfig" />
+	</bean>
+
+	<!-- Configure IBM WebSphere MQ connection factory -->
+	<bean id="websphereConnectionFactory" class="com.ibm.mq.jms.MQConnectionFactory">
+		<property name="transportType" value="1" />
+		<property name="hostName" value="${ibm.mq.host}" />
+		<property name="port" value="${ibm.mq.port}" />
+		<property name="queueManager" value="${ibm.qm.name}" />
+	</bean>
+
+	<bean id="websphereConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+		<property name="connectionFactory" ref="websphereConnectionFactory" />
+		<property name="concurrentConsumers" value="10" />
+	</bean>
+
+	<bean id="websphere" class="org.apache.camel.component.jms.JmsComponent">
+		<property name="configuration" ref="websphereConfig" />
+	</bean>
+
+	<camelContext trace="false" id="wmqToAmqContext"
+		xmlns="http://camel.apache.org/schema/blueprint">
+		<route id="wmqToAmqBridge">
+			<from uri="websphere:queue:{{ibm.queue.name}}?mapJmsMessage=false" />
+			<log message="The message contains ${body}" />
+			<to uri="activemq:queue:{{amq.queue.name}}" />
+		</route>
+	</camelContext>
+
+</blueprint>
