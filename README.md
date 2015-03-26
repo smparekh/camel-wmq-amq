@@ -8,7 +8,7 @@ Prerequisites
 - IBM supplied OSGi jar files for MQ client installed on Fuse
   - IBM_MQ_INSTALL_DIR/java/lib/OSGi
 - Running AMQ Broker
-- wmq.to.amq.cfg file in JBOSS_FUSE_INSTALL_DIR/etc/ with populated properties
+- wmq.to.amq.properties file in JBOSS_FUSE_INSTALL_DIR/etc/ with populated properties
 
 Usage
 -----
